@@ -1,6 +1,8 @@
 package game
 
-type coordinates struct {
+import "math"
+
+type Coordinates struct {
 	X int64
 	Y int64
 }
@@ -15,12 +17,12 @@ const (
 
 type State struct {
 	// TODO: first pass is holding state in map. Consider the space complexity of holding 2 game states instead.
-	Cells map[coordinates]cellState
+	Cells map[Coordinates]cellState
 }
 
-func New(c []coordinates) *State {
+func New(c []Coordinates) *State {
 	state := &State{
-		Cells: make(map[coordinates]cellState, len(c)),
+		Cells: make(map[Coordinates]cellState, len(c)),
 	}
 	for _, v := range c {
 		state.Cells[v] = alive
@@ -29,8 +31,6 @@ func New(c []coordinates) *State {
 }
 
 func (s *State) TickForward() {
-	// TODO: consider behavior on int64 overflow
-
 	for c := range s.Cells {
 		neighbors := s.getNeighbors(c)
 
@@ -51,33 +51,51 @@ func (s *State) TickForward() {
 	s.cleanState()
 }
 
-// TODO: return something consumable for the caller
-func (s *State) GetState() map[coordinates]cellState {
-	return s.Cells
+func (s *State) GetState() []Coordinates {
+	result := make([]Coordinates, 0, len(s.Cells))
+	for c := range s.Cells {
+		result = append(result, c)
+	}
+	return result
 }
 
 type getNeighborsResponse struct {
-	deadNeighbors []coordinates
-	liveNeighbors []coordinates
+	deadNeighbors []Coordinates
+	liveNeighbors []Coordinates
 }
 
-func (s *State) getNeighbors(c coordinates) getNeighborsResponse {
+func (s *State) getNeighbors(c Coordinates) getNeighborsResponse {
 	result := getNeighborsResponse{}
-	// range through rather than explicitly repeat coordinates for readability
-	for y := c.Y - 1; y <= c.Y+1; y++ {
-		for x := c.X - 1; x <= c.X+1; x++ {
-			if y == c.Y && x == c.X {
+	for _, yOffset := range []int64{-1, 0, 1} {
+		y, ok := offsetCoordinate(c.Y, yOffset)
+		if !ok {
+			continue
+		}
+		for _, xOffset := range []int64{-1, 0, 1} {
+			if yOffset == 0 && xOffset == 0 {
 				continue
 			}
-			cellState, exists := s.Cells[coordinates{Y: y, X: x}]
+			x, ok := offsetCoordinate(c.X, xOffset)
+			if !ok {
+				continue
+			}
+			neighbor := Coordinates{X: x, Y: y}
+			cellState, exists := s.Cells[neighbor]
 			if exists && cellState != emergent {
-				result.liveNeighbors = append(result.liveNeighbors, coordinates{Y: y, X: x})
+				result.liveNeighbors = append(result.liveNeighbors, neighbor)
 				continue
 			}
-			result.deadNeighbors = append(result.deadNeighbors, coordinates{Y: y, X: x})
+			result.deadNeighbors = append(result.deadNeighbors, neighbor)
 		}
 	}
 	return result
+}
+
+func offsetCoordinate(value, offset int64) (int64, bool) {
+	if offset == -1 && value == math.MinInt64 || offset == 1 && value == math.MaxInt64 {
+		return 0, false
+	}
+	return value + offset, true
 }
 
 func (s *State) cleanState() {

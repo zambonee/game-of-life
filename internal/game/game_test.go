@@ -1,9 +1,12 @@
 package game
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestNew(t *testing.T) {
-	cells := []coordinates{{X: 1, Y: 2}, {X: -3, Y: 4}, {X: 1, Y: 2}}
+	cells := []Coordinates{{X: 1, Y: 2}, {X: -3, Y: 4}, {X: 1, Y: 2}}
 	state := New(cells)
 
 	if len(state.Cells) != 2 {
@@ -12,8 +15,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestGetNeighbors(t *testing.T) {
-	center := coordinates{X: 0, Y: 0}
-	state := New([]coordinates{
+	center := Coordinates{X: 0, Y: 0}
+	state := New([]Coordinates{
 		center,
 		{X: -1, Y: -1},
 		{X: 0, Y: -1},
@@ -23,7 +26,7 @@ func TestGetNeighbors(t *testing.T) {
 		{X: -1, Y: 1},
 		{X: 0, Y: 1},
 	})
-	state.Cells[coordinates{X: 1, Y: 1}] = emergent
+	state.Cells[Coordinates{X: 1, Y: 1}] = emergent
 
 	got := state.getNeighbors(center)
 	if len(got.liveNeighbors) != 7 {
@@ -32,49 +35,109 @@ func TestGetNeighbors(t *testing.T) {
 	if len(got.deadNeighbors) != 1 {
 		t.Errorf("getNeighbors() found %d dead neighbors, want 1", len(got.deadNeighbors))
 	}
-	if got.deadNeighbors[0] != (coordinates{X: 1, Y: 1}) {
+	if got.deadNeighbors[0] != (Coordinates{X: 1, Y: 1}) {
 		t.Errorf("getNeighbors() dead neighbor = %v, want (1, 1)", got.deadNeighbors[0])
+	}
+}
+
+func TestGetNeighborsAtInt64Boundaries(t *testing.T) {
+	tests := []struct {
+		name              string
+		center            Coordinates
+		wrappedCoordinate Coordinates
+		wantDeadNeighbors int
+	}{
+		{
+			name:              "minimum x",
+			center:            Coordinates{X: math.MinInt64, Y: 0},
+			wrappedCoordinate: Coordinates{X: math.MaxInt64, Y: 0},
+			wantDeadNeighbors: 5,
+		},
+		{
+			name:              "maximum x",
+			center:            Coordinates{X: math.MaxInt64, Y: 0},
+			wrappedCoordinate: Coordinates{X: math.MinInt64, Y: 0},
+			wantDeadNeighbors: 5,
+		},
+		{
+			name:              "minimum y",
+			center:            Coordinates{X: 0, Y: math.MinInt64},
+			wrappedCoordinate: Coordinates{X: 0, Y: math.MaxInt64},
+			wantDeadNeighbors: 5,
+		},
+		{
+			name:              "maximum y",
+			center:            Coordinates{X: 0, Y: math.MaxInt64},
+			wrappedCoordinate: Coordinates{X: 0, Y: math.MinInt64},
+			wantDeadNeighbors: 5,
+		},
+		{
+			name:              "minimum corner",
+			center:            Coordinates{X: math.MinInt64, Y: math.MinInt64},
+			wrappedCoordinate: Coordinates{X: math.MaxInt64, Y: math.MaxInt64},
+			wantDeadNeighbors: 3,
+		},
+		{
+			name:              "maximum corner",
+			center:            Coordinates{X: math.MaxInt64, Y: math.MaxInt64},
+			wrappedCoordinate: Coordinates{X: math.MinInt64, Y: math.MinInt64},
+			wantDeadNeighbors: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			state := New([]Coordinates{tt.center, tt.wrappedCoordinate})
+			got := state.getNeighbors(tt.center)
+
+			if len(got.liveNeighbors) != 0 {
+				t.Errorf("getNeighbors() found %d live neighbors across the boundary, want 0", len(got.liveNeighbors))
+			}
+			if len(got.deadNeighbors) != tt.wantDeadNeighbors {
+				t.Errorf("getNeighbors() found %d dead neighbors, want %d", len(got.deadNeighbors), tt.wantDeadNeighbors)
+			}
+		})
 	}
 }
 
 func TestTickForward(t *testing.T) {
 	tests := []struct {
 		name  string
-		start []coordinates
-		want  []coordinates
+		start []Coordinates
+		want  []Coordinates
 	}{
 		{
 			name:  "underpopulation",
-			start: []coordinates{{X: 0, Y: 0}},
+			start: []Coordinates{{X: 0, Y: 0}},
 		},
 		{
 			name: "stable block",
-			start: []coordinates{
+			start: []Coordinates{
 				{X: 0, Y: 0}, {X: 1, Y: 0},
 				{X: 0, Y: 1}, {X: 1, Y: 1},
 			},
-			want: []coordinates{
+			want: []Coordinates{
 				{X: 0, Y: 0}, {X: 1, Y: 0},
 				{X: 0, Y: 1}, {X: 1, Y: 1},
 			},
 		},
 		{
 			name: "blinker",
-			start: []coordinates{
+			start: []Coordinates{
 				{X: -1, Y: 0}, {X: 0, Y: 0}, {X: 1, Y: 0},
 			},
-			want: []coordinates{
+			want: []Coordinates{
 				{X: 0, Y: -1}, {X: 0, Y: 0}, {X: 0, Y: 1},
 			},
 		},
 		{
 			name: "overpopulation",
-			start: []coordinates{
+			start: []Coordinates{
 				{X: -1, Y: -1}, {X: 0, Y: -1}, {X: 1, Y: -1},
 				{X: -1, Y: 0}, {X: 0, Y: 0}, {X: 1, Y: 0},
 				{X: -1, Y: 1}, {X: 0, Y: 1}, {X: 1, Y: 1},
 			},
-			want: []coordinates{
+			want: []Coordinates{
 				{X: -1, Y: -1}, {X: 1, Y: -1},
 				{X: -1, Y: 1}, {X: 1, Y: 1},
 				{X: 0, Y: -2}, {X: 2, Y: 0}, {X: -2, Y: 0}, {X: 0, Y: 2},
@@ -92,17 +155,17 @@ func TestTickForward(t *testing.T) {
 }
 
 func TestTickForwardTwice(t *testing.T) {
-	start := []coordinates{
+	start := []Coordinates{
 		{X: 1, Y: 0},
 		{X: 2, Y: 1},
 		{X: 0, Y: 2}, {X: 1, Y: 2}, {X: 2, Y: 2},
 	}
-	firstState := []coordinates{
+	firstState := []Coordinates{
 		{X: 0, Y: 1}, {X: 2, Y: 1},
 		{X: 1, Y: 2}, {X: 2, Y: 2},
 		{X: 1, Y: 3},
 	}
-	lastState := []coordinates{
+	lastState := []Coordinates{
 		{X: 2, Y: 1},
 		{X: 0, Y: 2}, {X: 2, Y: 2},
 		{X: 1, Y: 3}, {X: 2, Y: 3},
@@ -116,10 +179,10 @@ func TestTickForwardTwice(t *testing.T) {
 	assertLiveCells(t, state, lastState)
 }
 
-func assertLiveCells(t *testing.T, state *State, want []coordinates) {
+func assertLiveCells(t *testing.T, state *State, want []Coordinates) {
 	t.Helper()
 
-	wantSet := make(map[coordinates]struct{}, len(want))
+	wantSet := make(map[Coordinates]struct{}, len(want))
 	for _, cell := range want {
 		wantSet[cell] = struct{}{}
 	}
