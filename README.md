@@ -30,8 +30,24 @@ Sample input:
 
 Your program should read the state of the simulation from standard input, run 10 iterations of the Game of Life, and print the result to standard output in Life 1.06 format.
 
-Please don’t spend more than 3 hours on your solution. Feel free to allocate that time in a manner that works best for your schedule. You may work in any language you prefer.
-
 We're most interested in both the technical aspects of how you deal with very large integers and how you go about solving the problem. At the onsite, be prepared to discuss your solution, including the choices and tradeoffs you made. Though not required, you are welcome to bring a laptop with you to your interview to walk us through the code.
 
 [epic conway's game of life](https://youtu.be/C2vgICfQawE)
+
+## Usage
+
+Run the simulation by piping a Life 1.06 file to the program:
+
+```sh
+go run ./cmd < input.life
+```
+
+Input must begin with the `#Life 1.06` header. Each following nonblank line must contain an `x y` coordinate pair, with both values in the signed 64-bit integer range. The program advances the board by 10 generations and writes the live-cell coordinates to standard output in Life 1.06 format, sorted by coordinate. Input errors are reported to standard error and cause a nonzero exit status.
+
+## Tests
+
+Run the test suite with:
+
+```sh
+go test ./...
+```
