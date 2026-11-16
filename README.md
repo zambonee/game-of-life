@@ -42,7 +42,7 @@ Run the simulation by piping a Life 1.06 file to the program:
 go run ./cmd < input.life
 ```
 
-Input must begin with the `#Life 1.06` header. Each following nonblank line must contain an `x y` coordinate pair, with both values in the signed 64-bit integer range. The program advances the board by 10 generations and writes the live-cell coordinates to standard output in Life 1.06 format, sorted by coordinate. Input errors are reported to standard error and cause a nonzero exit status.
+Input file must begin with the `#Life 1.06` header. Each following nonblank line must contain an `x y` coordinate pair, with both values in the signed 64-bit integer range. The program advances the board by 10 generations and writes the live-cell coordinates to standard output in Life 1.06 format, sorted by coordinate. Input errors are reported to standard error and cause a nonzero exit status.
 
 ## Tests
 
