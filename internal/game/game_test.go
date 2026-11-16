@@ -26,7 +26,6 @@ func TestGetNeighbors(t *testing.T) {
 		{X: -1, Y: 1},
 		{X: 0, Y: 1},
 	})
-	state.cells[Coordinates{X: 1, Y: 1}] = emergent
 
 	got := state.getNeighbors(center)
 	if len(got.liveNeighbors) != 7 {
@@ -189,10 +188,7 @@ func assertLiveCells(t *testing.T, state *State, want []Coordinates) {
 	if len(state.cells) != len(wantSet) {
 		t.Fatalf("got %d live cells, want %d: %v", len(state.cells), len(wantSet), state.cells)
 	}
-	for cell, cellState := range state.cells {
-		if cellState != alive {
-			t.Errorf("cell %v has state %v after tick, want alive", cell, cellState)
-		}
+	for cell := range state.cells {
 		if _, ok := wantSet[cell]; !ok {
 			t.Errorf("unexpected live cell %v", cell)
 		}

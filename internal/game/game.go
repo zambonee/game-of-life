@@ -1,55 +1,52 @@
 package game
 
-import "math"
+import (
+	"math"
+)
 
 type Coordinates struct {
 	X int64
 	Y int64
 }
 
-type cellState uint8
-
-const (
-	alive    cellState = iota // alive now and alive next generation (default state for new game state)
-	dead                      // alive now but dead next generation
-	emergent                  // dead now (does not exist in grid as live) but alive next generation
-)
-
 type State struct {
 	// TODO: first pass is holding state in map. Consider the space complexity of holding 2 game states instead.
-	cells map[Coordinates]cellState
+	cells map[Coordinates]struct{}
 }
 
 func New(c []Coordinates) *State {
 	state := &State{
-		cells: make(map[Coordinates]cellState, len(c)),
+		cells: make(map[Coordinates]struct{}, len(c)),
 	}
 	for _, v := range c {
-		state.cells[v] = alive
+		state.cells[v] = struct{}{}
 	}
 	return state
 }
 
 // TickForward progresses the game state to the next generation
 func (s *State) TickForward() {
+	nextCells := make(map[Coordinates]struct{})
 	for c := range s.cells {
 		neighbors := s.getNeighbors(c)
 
 		// If an "alive" cell had less than 2 or more than 3 alive neighbors (in any of the 8 surrounding cells), it becomes dead.
 		if len(neighbors.liveNeighbors) < 2 || len(neighbors.liveNeighbors) > 3 {
-			s.cells[c] = dead
+			continue
 		}
+		nextCells[c] = struct{}{}
 
 		// If a "dead" cell had *exactly* 3 alive neighbors, it becomes alive.
 		// TODO: find better efficiencies for this lookup
 		for _, n := range neighbors.deadNeighbors {
 			neighbors := s.getNeighbors(n)
 			if len(neighbors.liveNeighbors) == 3 {
-				s.cells[n] = emergent
+				nextCells[n] = struct{}{}
 			}
 		}
 	}
-	s.cleanState()
+
+	s.cells = nextCells
 }
 
 // GetState returns the coordinates of live cells at the current game state
@@ -82,8 +79,7 @@ func (s *State) getNeighbors(c Coordinates) getNeighborsResponse {
 				continue
 			}
 			neighbor := Coordinates{X: x, Y: y}
-			cellState, exists := s.cells[neighbor]
-			if exists && cellState != emergent {
+			if _, exists := s.cells[neighbor]; exists {
 				result.liveNeighbors = append(result.liveNeighbors, neighbor)
 				continue
 			}
@@ -98,15 +94,4 @@ func offsetCoordinate(value, offset int64) (int64, bool) {
 		return 0, false
 	}
 	return value + offset, true
-}
-
-func (s *State) cleanState() {
-	for cell, state := range s.cells {
-		switch state {
-		case dead:
-			delete(s.cells, cell)
-		case emergent:
-			s.cells[cell] = alive
-		}
-	}
 }
