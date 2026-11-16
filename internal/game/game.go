@@ -25,7 +25,7 @@ func New(c []Coordinates) *State {
 
 // TickForward progresses the game state to the next generation
 func (s *State) TickForward() {
-	neighborCounts := make(map[Coordinates]int, len(s.cells))
+	neighborCounts := make(map[Coordinates]int)
 	for cell := range s.cells {
 		for _, yOffset := range []int64{-1, 0, 1} {
 			y, ok := offsetCoordinate(cell.Y, yOffset)
