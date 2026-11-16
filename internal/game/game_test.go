@@ -110,6 +110,13 @@ func TestTickForward(t *testing.T) {
 			start: []Coordinates{{X: 0, Y: 0}},
 		},
 		{
+			name: "birth even when neighbors die",
+			start: []Coordinates{
+				{X: -1, Y: -1}, {X: 1, Y: -1}, {X: -1, Y: 1},
+			},
+			want: []Coordinates{{X: 0, Y: 0}},
+		},
+		{
 			name: "stable block",
 			start: []Coordinates{
 				{X: 0, Y: 0}, {X: 1, Y: 0},

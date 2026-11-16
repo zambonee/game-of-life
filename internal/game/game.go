@@ -10,7 +10,6 @@ type Coordinates struct {
 }
 
 type State struct {
-	// TODO: first pass is holding state in map. Consider the space complexity of holding 2 game states instead.
 	cells map[Coordinates]struct{}
 }
 
@@ -26,23 +25,31 @@ func New(c []Coordinates) *State {
 
 // TickForward progresses the game state to the next generation
 func (s *State) TickForward() {
-	nextCells := make(map[Coordinates]struct{})
-	for c := range s.cells {
-		neighbors := s.getNeighbors(c)
-
-		// If an "alive" cell had less than 2 or more than 3 alive neighbors (in any of the 8 surrounding cells), it becomes dead.
-		if len(neighbors.liveNeighbors) < 2 || len(neighbors.liveNeighbors) > 3 {
-			continue
-		}
-		nextCells[c] = struct{}{}
-
-		// If a "dead" cell had *exactly* 3 alive neighbors, it becomes alive.
-		// TODO: find better efficiencies for this lookup
-		for _, n := range neighbors.deadNeighbors {
-			neighbors := s.getNeighbors(n)
-			if len(neighbors.liveNeighbors) == 3 {
-				nextCells[n] = struct{}{}
+	neighborCounts := make(map[Coordinates]int, len(s.cells))
+	for cell := range s.cells {
+		for _, yOffset := range []int64{-1, 0, 1} {
+			y, ok := offsetCoordinate(cell.Y, yOffset)
+			if !ok {
+				continue
 			}
+			for _, xOffset := range []int64{-1, 0, 1} {
+				if xOffset == 0 && yOffset == 0 {
+					continue
+				}
+				x, ok := offsetCoordinate(cell.X, xOffset)
+				if !ok {
+					continue
+				}
+				neighborCounts[Coordinates{X: x, Y: y}]++
+			}
+		}
+	}
+
+	nextCells := make(map[Coordinates]struct{})
+	for cell, count := range neighborCounts {
+		_, alive := s.cells[cell]
+		if count == 3 || (alive && count == 2) {
+			nextCells[cell] = struct{}{}
 		}
 	}
 
