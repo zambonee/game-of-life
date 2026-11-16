@@ -9,8 +9,8 @@ func TestNew(t *testing.T) {
 	cells := []Coordinates{{X: 1, Y: 2}, {X: -3, Y: 4}, {X: 1, Y: 2}}
 	state := New(cells)
 
-	if len(state.Cells) != 2 {
-		t.Fatalf("New() created %d cells, want 2", len(state.Cells))
+	if len(state.cells) != 2 {
+		t.Fatalf("New() created %d cells, want 2", len(state.cells))
 	}
 }
 
@@ -26,7 +26,7 @@ func TestGetNeighbors(t *testing.T) {
 		{X: -1, Y: 1},
 		{X: 0, Y: 1},
 	})
-	state.Cells[Coordinates{X: 1, Y: 1}] = emergent
+	state.cells[Coordinates{X: 1, Y: 1}] = emergent
 
 	got := state.getNeighbors(center)
 	if len(got.liveNeighbors) != 7 {
@@ -186,10 +186,10 @@ func assertLiveCells(t *testing.T, state *State, want []Coordinates) {
 	for _, cell := range want {
 		wantSet[cell] = struct{}{}
 	}
-	if len(state.Cells) != len(wantSet) {
-		t.Fatalf("got %d live cells, want %d: %v", len(state.Cells), len(wantSet), state.Cells)
+	if len(state.cells) != len(wantSet) {
+		t.Fatalf("got %d live cells, want %d: %v", len(state.cells), len(wantSet), state.cells)
 	}
-	for cell, cellState := range state.Cells {
+	for cell, cellState := range state.cells {
 		if cellState != alive {
 			t.Errorf("cell %v has state %v after tick, want alive", cell, cellState)
 		}
@@ -198,7 +198,7 @@ func assertLiveCells(t *testing.T, state *State, want []Coordinates) {
 		}
 	}
 	for cell := range wantSet {
-		if _, ok := state.Cells[cell]; !ok {
+		if _, ok := state.cells[cell]; !ok {
 			t.Errorf("missing live cell %v", cell)
 		}
 	}

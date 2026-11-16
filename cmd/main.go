@@ -12,6 +12,8 @@ import (
 	"github.com/zambonee/game-of-life/internal/game"
 )
 
+const generationsToRun = 10
+
 func main() {
 	if err := run(os.Stdin, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -26,7 +28,7 @@ func run(input io.Reader, output io.Writer) error {
 	}
 
 	state := game.New(cells)
-	for range 10 {
+	for range generationsToRun {
 		state.TickForward()
 	}
 
@@ -81,8 +83,8 @@ func parseLife106(input io.Reader) ([]game.Coordinates, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("read input: %w", err)
 	}
-	return cells, nil
 
+	return cells, nil
 }
 
 func write(writer io.Writer, cells []game.Coordinates) error {

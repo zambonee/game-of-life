@@ -17,26 +17,27 @@ const (
 
 type State struct {
 	// TODO: first pass is holding state in map. Consider the space complexity of holding 2 game states instead.
-	Cells map[Coordinates]cellState
+	cells map[Coordinates]cellState
 }
 
 func New(c []Coordinates) *State {
 	state := &State{
-		Cells: make(map[Coordinates]cellState, len(c)),
+		cells: make(map[Coordinates]cellState, len(c)),
 	}
 	for _, v := range c {
-		state.Cells[v] = alive
+		state.cells[v] = alive
 	}
 	return state
 }
 
+// TickForward progresses the game state to the next generation
 func (s *State) TickForward() {
-	for c := range s.Cells {
+	for c := range s.cells {
 		neighbors := s.getNeighbors(c)
 
 		// If an "alive" cell had less than 2 or more than 3 alive neighbors (in any of the 8 surrounding cells), it becomes dead.
 		if len(neighbors.liveNeighbors) < 2 || len(neighbors.liveNeighbors) > 3 {
-			s.Cells[c] = dead
+			s.cells[c] = dead
 		}
 
 		// If a "dead" cell had *exactly* 3 alive neighbors, it becomes alive.
@@ -44,16 +45,17 @@ func (s *State) TickForward() {
 		for _, n := range neighbors.deadNeighbors {
 			neighbors := s.getNeighbors(n)
 			if len(neighbors.liveNeighbors) == 3 {
-				s.Cells[n] = emergent
+				s.cells[n] = emergent
 			}
 		}
 	}
 	s.cleanState()
 }
 
+// GetState returns the coordinates of live cells at the current game state
 func (s *State) GetState() []Coordinates {
-	result := make([]Coordinates, 0, len(s.Cells))
-	for c := range s.Cells {
+	result := make([]Coordinates, 0, len(s.cells))
+	for c := range s.cells {
 		result = append(result, c)
 	}
 	return result
@@ -80,7 +82,7 @@ func (s *State) getNeighbors(c Coordinates) getNeighborsResponse {
 				continue
 			}
 			neighbor := Coordinates{X: x, Y: y}
-			cellState, exists := s.Cells[neighbor]
+			cellState, exists := s.cells[neighbor]
 			if exists && cellState != emergent {
 				result.liveNeighbors = append(result.liveNeighbors, neighbor)
 				continue
@@ -92,19 +94,19 @@ func (s *State) getNeighbors(c Coordinates) getNeighborsResponse {
 }
 
 func offsetCoordinate(value, offset int64) (int64, bool) {
-	if offset == -1 && value == math.MinInt64 || offset == 1 && value == math.MaxInt64 {
+	if (offset == -1 && value == math.MinInt64) || (offset == 1 && value == math.MaxInt64) {
 		return 0, false
 	}
 	return value + offset, true
 }
 
 func (s *State) cleanState() {
-	for cell, state := range s.Cells {
+	for cell, state := range s.cells {
 		switch state {
 		case dead:
-			delete(s.Cells, cell)
+			delete(s.cells, cell)
 		case emergent:
-			s.Cells[cell] = alive
+			s.cells[cell] = alive
 		}
 	}
 }
