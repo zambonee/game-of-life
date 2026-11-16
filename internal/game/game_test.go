@@ -1,7 +1,6 @@
 package game
 
 import (
-	"math"
 	"testing"
 )
 
@@ -11,91 +10,6 @@ func TestNew(t *testing.T) {
 
 	if len(state.cells) != 2 {
 		t.Fatalf("New() created %d cells, want 2", len(state.cells))
-	}
-}
-
-func TestGetNeighbors(t *testing.T) {
-	center := Coordinates{X: 0, Y: 0}
-	state := New([]Coordinates{
-		center,
-		{X: -1, Y: -1},
-		{X: 0, Y: -1},
-		{X: 1, Y: -1},
-		{X: -1, Y: 0},
-		{X: 1, Y: 0},
-		{X: -1, Y: 1},
-		{X: 0, Y: 1},
-	})
-
-	got := state.getNeighbors(center)
-	if len(got.liveNeighbors) != 7 {
-		t.Errorf("getNeighbors() found %d live neighbors, want 7", len(got.liveNeighbors))
-	}
-	if len(got.deadNeighbors) != 1 {
-		t.Errorf("getNeighbors() found %d dead neighbors, want 1", len(got.deadNeighbors))
-	}
-	if got.deadNeighbors[0] != (Coordinates{X: 1, Y: 1}) {
-		t.Errorf("getNeighbors() dead neighbor = %v, want (1, 1)", got.deadNeighbors[0])
-	}
-}
-
-func TestGetNeighborsAtInt64Boundaries(t *testing.T) {
-	tests := []struct {
-		name              string
-		center            Coordinates
-		wrappedCoordinate Coordinates
-		wantDeadNeighbors int
-	}{
-		{
-			name:              "minimum x",
-			center:            Coordinates{X: math.MinInt64, Y: 0},
-			wrappedCoordinate: Coordinates{X: math.MaxInt64, Y: 0},
-			wantDeadNeighbors: 5,
-		},
-		{
-			name:              "maximum x",
-			center:            Coordinates{X: math.MaxInt64, Y: 0},
-			wrappedCoordinate: Coordinates{X: math.MinInt64, Y: 0},
-			wantDeadNeighbors: 5,
-		},
-		{
-			name:              "minimum y",
-			center:            Coordinates{X: 0, Y: math.MinInt64},
-			wrappedCoordinate: Coordinates{X: 0, Y: math.MaxInt64},
-			wantDeadNeighbors: 5,
-		},
-		{
-			name:              "maximum y",
-			center:            Coordinates{X: 0, Y: math.MaxInt64},
-			wrappedCoordinate: Coordinates{X: 0, Y: math.MinInt64},
-			wantDeadNeighbors: 5,
-		},
-		{
-			name:              "minimum corner",
-			center:            Coordinates{X: math.MinInt64, Y: math.MinInt64},
-			wrappedCoordinate: Coordinates{X: math.MaxInt64, Y: math.MaxInt64},
-			wantDeadNeighbors: 3,
-		},
-		{
-			name:              "maximum corner",
-			center:            Coordinates{X: math.MaxInt64, Y: math.MaxInt64},
-			wrappedCoordinate: Coordinates{X: math.MinInt64, Y: math.MinInt64},
-			wantDeadNeighbors: 3,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			state := New([]Coordinates{tt.center, tt.wrappedCoordinate})
-			got := state.getNeighbors(tt.center)
-
-			if len(got.liveNeighbors) != 0 {
-				t.Errorf("getNeighbors() found %d live neighbors across the boundary, want 0", len(got.liveNeighbors))
-			}
-			if len(got.deadNeighbors) != tt.wantDeadNeighbors {
-				t.Errorf("getNeighbors() found %d dead neighbors, want %d", len(got.deadNeighbors), tt.wantDeadNeighbors)
-			}
-		})
 	}
 }
 

@@ -65,37 +65,6 @@ func (s *State) GetState() []Coordinates {
 	return result
 }
 
-type getNeighborsResponse struct {
-	deadNeighbors []Coordinates
-	liveNeighbors []Coordinates
-}
-
-func (s *State) getNeighbors(c Coordinates) getNeighborsResponse {
-	result := getNeighborsResponse{}
-	for _, yOffset := range []int64{-1, 0, 1} {
-		y, ok := offsetCoordinate(c.Y, yOffset)
-		if !ok {
-			continue
-		}
-		for _, xOffset := range []int64{-1, 0, 1} {
-			if yOffset == 0 && xOffset == 0 {
-				continue
-			}
-			x, ok := offsetCoordinate(c.X, xOffset)
-			if !ok {
-				continue
-			}
-			neighbor := Coordinates{X: x, Y: y}
-			if _, exists := s.cells[neighbor]; exists {
-				result.liveNeighbors = append(result.liveNeighbors, neighbor)
-				continue
-			}
-			result.deadNeighbors = append(result.deadNeighbors, neighbor)
-		}
-	}
-	return result
-}
-
 func offsetCoordinate(value, offset int64) (int64, bool) {
 	if (offset == -1 && value == math.MinInt64) || (offset == 1 && value == math.MaxInt64) {
 		return 0, false
